@@ -1,0 +1,27 @@
+
+# Python virtual environment
+venv/
+
+# Temporary testing and inspection scripts
+analysis_test.py
+check_setup.py
+inspect_dictionaries.py
+inspect_files.py
+test_scraper.py
+test_syllables.py
+
+# Backup files
+main_backup.py
+Output_backup.xlsx
+
+# Assignment reference documents
+Objective.docx
+Output Data Structure.xlsx
+Text Analysis.docx
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Scraped test output
+scraped_test/
