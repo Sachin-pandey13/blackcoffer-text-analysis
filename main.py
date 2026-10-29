@@ -10,9 +10,7 @@ from nltk.corpus import stopwords as nltk_stopwords
 from nltk.tokenize import sent_tokenize, word_tokenize
 
 
-# ==========================================================
-# 1. CONFIGURATION
-# ==========================================================
+# paths and output columns
 
 BASE_DIR = Path(__file__).parent
 INPUT_FILE = BASE_DIR / "Input.xlsx"
@@ -21,8 +19,7 @@ MASTER_DIR = BASE_DIR / "MasterDictionary"
 TEXT_DIR = BASE_DIR / "scraped_test"
 OUTPUT_FILE = BASE_DIR / "Output.xlsx"
 
-# First run: process only five articles.
-# Change to None after validating the test output.
+# set to a number like 5 to do a quick test run, None to process everything
 TEST_LIMIT = None
 
 TEXT_DIR.mkdir(exist_ok=True)
@@ -56,10 +53,6 @@ OUTPUT_COLUMNS = [
     "AVG WORD LENGTH",
 ]
 
-
-# ==========================================================
-# 2. LOAD STOPWORDS AND SENTIMENT DICTIONARIES
-# ==========================================================
 
 def load_stopwords(folder):
     words = set()
@@ -100,11 +93,6 @@ negative_words = (
 
 nltk_english_stopwords = set(nltk_stopwords.words("english"))
 
-
-
-# ==========================================================
-# 3. SCRAPE AND SAVE ARTICLE TEXT
-# ==========================================================
 
 def normalize_text(text):
     text = text.replace("\xa0", " ")
@@ -147,7 +135,7 @@ def extract_article(html):
         if not text:
             continue
 
-        # Skip a paragraph consisting only of a URL.
+        # skip paragraphs that are just a bare URL
         if re.fullmatch(r"https?://\S+", text):
             continue
 
@@ -167,10 +155,6 @@ def scrape_article(session, url):
 
     return title, body
 
-
-# ==========================================================
-# 4. CLEAN WORDS
-# ==========================================================
 
 def clean_word(token):
     return re.sub(r"^[^\w]+|[^\w]+$", "", token).lower()
@@ -216,10 +200,6 @@ def get_analysis_words(text):
     return words
 
 
-# ==========================================================
-# 5. SENTIMENT ANALYSIS
-# ==========================================================
-
 def calculate_sentiment(text):
     words = get_sentiment_words(text)
 
@@ -251,37 +231,25 @@ def calculate_sentiment(text):
     }
 
 
-# ==========================================================
-# 6. SYLLABLE COUNTING
-# ==========================================================
-
-
 def count_syllables(word):
     word = re.sub(r"[^a-z]", "", word.lower())
 
     if not word:
         return 0
 
-    # Count consecutive vowel groups.
     count = len(re.findall(r"[aeiouy]+", word))
 
-    # Handle common -ed endings.
+    # -ed after most consonants is silent, so we subtract the extra vowel group
     if word.endswith("ed") and len(word) > 3:
-        # Usually, -ed is not an extra syllable,
-        # except in endings pronounced as a separate syllable.
         if word[-3] not in "td":
             count -= 1
 
-    # Handle -es endings.
     elif word.endswith("es") and len(word) > 3:
         if word[-3] not in "szhx":
             count -= 1
 
     return max(1, count)
 
-# ==========================================================
-# 7. PERSONAL PRONOUNS
-# ==========================================================
 
 def count_personal_pronouns(text):
     pattern = re.compile(
@@ -292,7 +260,7 @@ def count_personal_pronouns(text):
     count = 0
 
     for match in pattern.finditer(text):
-        # Exclude uppercase US when it denotes the country.
+        # "US" in all-caps almost always means the country, not the pronoun
         if match.group() == "US":
             continue
 
@@ -300,10 +268,6 @@ def count_personal_pronouns(text):
 
     return count
 
-
-# ==========================================================
-# 8. CALCULATE ALL ANALYSIS VARIABLES
-# ==========================================================
 
 def analyze_text(text):
     sentiment = calculate_sentiment(text)
@@ -357,10 +321,6 @@ def analyze_text(text):
         "AVG WORD LENGTH": avg_word_length,
     }
 
-
-# ==========================================================
-# 9. MAIN PIPELINE
-# ==========================================================
 
 def main():
     if not INPUT_FILE.exists():
